@@ -18,6 +18,7 @@
             <thead class="table-light">
                 <tr>
                     <th style="width:70px">ID</th>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
@@ -57,7 +58,7 @@
                 </div>
                 <form id="contactForm" method="POST" action="{{ route('store') }}" enctype="multipart/form-data">
                     @csrf
-                    <div id="form-messages" class="alert" style="display: none;"></div>
+                    <div id="form-messages" class="alert mx-2 mt-2" style="display: none;"></div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
@@ -127,13 +128,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="editModalLabel">New Contact</h1>
+                    <h1 class="modal-title fs-5" id="editModalLabel">Update Contact</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="editContactForm" method="POST" action="" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="_method" value="PUT" id="edit-method-input">
-                    <div id="edit-form-messages" class="alert" style="display: none;"></div>
+                    <div id="edit-form-messages" class="alert mx-2 mt-2" style="display: none;"></div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="edit-name" class="form-label">Name <span class="text-danger">*</span></label>
@@ -241,20 +242,26 @@
                 // Add new rows
                 contacts.forEach(contact => {
                     const tr = document.createElement('tr');
+                    const profileImage = contact.profile_image ? 'storage/'+contact.profile_image : 'assets/img/person.png';
                     tr.innerHTML = `
                         <td class="text-muted">${contact.id}</td>
+                        <td>
+                            <img src="{{ asset('${profileImage}') }}" alt="Profile Image" class="img-fluid rounded-circle border" style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
                         <td>
                             <div class="fw-semibold">${contact.name || '-'}</div>
                         </td>
                         <td>${contact.email || '-'}</td>
                         <td>${contact.phone || '-'}</td>
                         <td class="text-muted small">${contact.created_at ? new Date(contact.created_at).toISOString().split('T')[0] : '-'}</td>
-                        <td class="d-flex gap-2">
-                            <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
-                            <form class="d-inline delete-form" data-id="${contact.id}">
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contact?')">Delete</button>
-                            </form>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
+                                <form class="d-inline delete-form" data-id="${contact.id}">
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contact?')">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -265,7 +272,7 @@
             loadContacts();
 
             document.getElementById('contactForm').addEventListener('submit', function(e) {
-                e.preventDefault();
+                // e.preventDefault();
 
                 const form = e.target;
                 const formData = new FormData(form);
@@ -285,7 +292,7 @@
                     processData: false,
                     contentType: false,
                     success: function(data) {
-                        messagesDiv.className = 'alert alert-success';
+                        messagesDiv.className = 'alert alert-success mx-2 mt-2';
                         messagesDiv.textContent = data.message || 'Contact saved successfully!';
                         messagesDiv.style.display = 'block';
 
@@ -299,8 +306,9 @@
                     error: function(xhr) {
                         const errorMessage = xhr.responseJSON?.message ||
                             'An error occurred while saving the contact.';
-                        $messagesDiv.removeClass('alert-success').addClass('alert-danger')
-                            .text(errorMessage).show();
+                        messagesDiv.className = 'alert alert-danger mx-2 mt-2';
+                        messagesDiv.textContent = errorMessage;
+                        messagesDiv.style.display = 'block';
                         console.error('Error:', xhr);
                     },
                     complete: function() {
@@ -451,7 +459,7 @@
                     processData: false,
                     contentType: false,
                     success: function(data) {
-                        messagesDiv.className = 'alert alert-success';
+                        messagesDiv.className = 'alert alert-success mx-2 mt-2';
                         messagesDiv.textContent = data.message || 'Contact saved successfully!';
                         messagesDiv.style.display = 'block';
                         loadContacts();
@@ -459,7 +467,7 @@
                     error: function(xhr) {
                         const errorMessage = xhr.responseJSON?.message ||
                             'An error occurred while saving the contact.';
-                        messagesDiv.className = 'alert alert-danger';
+                        messagesDiv.className = 'alert alert-danger mx-2 mt-2';
                         messagesDiv.textContent = errorMessage;
                         messagesDiv.style.display = 'block';
                         console.error('Error:', xhr);

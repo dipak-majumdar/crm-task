@@ -127,16 +127,26 @@ class ContactsController extends Controller
                 'additional_file' => 'nullable|file|max:5120', // 5MB max
             ]);
 
+            // unlink(public_path($contact->profile_image));
+            // unlink(public_path($contact->additional_file));
+
+            $oldImg = $contact->profile_image;
+            $oldFile = $contact->additional_file;
+
             // Handle file uploads
             $profileImagePath = null;
             $additionalFilePath = null;
 
             if ($request->hasFile('profile_image')) {
                 $profileImagePath = $request->file('profile_image')->store('profile_images', 'public');
+            }else{
+                $profileImagePath = $contact->profile_image;
             }
 
             if ($request->hasFile('additional_file')) {
                 $additionalFilePath = $request->file('additional_file')->store('additional_files', 'public');
+            }else{
+                $additionalFilePath = $contact->additional_file;
             }
 
             $contact->update([
@@ -147,6 +157,20 @@ class ContactsController extends Controller
                 'profile_image' => $profileImagePath,
                 'additional_file' => $additionalFilePath,
             ]);
+
+            if ($request->hasFile('profile_image') && $oldImg) {
+                $oldPath = str_replace('storage/', '', $oldImg); // Remove 'storage/' prefix if it exists
+                if (file_exists(storage_path('app/public/' . $oldPath))) {
+                    unlink(storage_path('app/public/' . $oldPath));
+                }
+            }
+
+            if ($request->hasFile('additional_file') && $oldFile) {
+                $oldPath = str_replace('storage/', '', $oldFile); // Remove 'storage/' prefix if it exists
+                if (file_exists(storage_path('app/public/' . $oldPath))) {
+                    unlink(storage_path('app/public/' . $oldPath));
+                }
+            }
 
             // Delete all existing custom fields
             $contact->customFields()->delete();
