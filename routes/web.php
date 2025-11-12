@@ -1,0 +1,14 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\ContactsController;
+
+Route::get('/', [ContactsController::class, 'index'])->name('list');
+Route::get('/getList', [ContactsController::class, 'getList'])->name('getList');
+
+Route::get('/get-contact/{id}', [ContactsController::class, 'getContact'])->name('getcontact');
+Route::put('/update-contact/{id}', [ContactsController::class, 'updateContact'])->name('updateContact');
+
+Route::post('/store', [ContactsController::class, 'store'])->name('store');
+Route::delete('/delete/{id}', [ContactsController::class, 'deleteContact'])->name('delete');
