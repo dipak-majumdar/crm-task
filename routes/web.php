@@ -11,4 +11,6 @@ Route::get('/get-contact/{id}', [ContactsController::class, 'getContact'])->name
 Route::put('/update-contact/{id}', [ContactsController::class, 'updateContact'])->name('updateContact');
 
 Route::post('/store', [ContactsController::class, 'store'])->name('store');
+
+Route::put('/merge/{id}', [ContactsController::class, 'mergeContacts'])->name('mergeContact');
 Route::delete('/delete/{id}', [ContactsController::class, 'deleteContact'])->name('delete');

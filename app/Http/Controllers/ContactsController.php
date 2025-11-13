@@ -9,7 +9,8 @@ class ContactsController extends Controller
 {
     public function index()
     {
-        return view('list');
+        $contacts = Contact::all();
+        return view('list', compact('contacts'));
     }
 
     public function getList()
@@ -199,6 +200,132 @@ class ContactsController extends Controller
             ], 500);
         }
     }
+
+    public function mergeContacts(Request $request)
+    {
+        try {
+            $request->validate([
+                'master_contact_id' => 'numeric|required',
+                'merge-contact' => 'numeric|required',
+                'keep' => 'string|required|in:both,master',
+            ]);
+            
+            $masterContact = Contact::find($request->input('master_contact_id'));
+            $mergeContact = Contact::find($request->input('merge-contact'));
+
+            if ($masterContact->id == $mergeContact->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You cannot merge a contact with itself.',
+                ], 400);
+            }
+
+            if ($request->input('keep') == 'master') {
+                $masterContact->is_merged = true;
+                $mergeContact->merged_into = $masterContact->id;
+            } else if ($request->input('keep') == 'both') {
+                $masterContact->is_merged = true;
+                $mergeContact->merged_into = $masterContact->id;
+
+                // Update phone if different
+                if ($masterContact->phone != $mergeContact->phone) {
+                    $masterContact->phone = $mergeContact->phone 
+                    ? ($masterContact->phone 
+                        ? $masterContact->phone . ', ' . $mergeContact->phone
+                        : $mergeContact->phone)
+                    : $masterContact->phone;
+                }
+
+                // Update email if different
+                if ($masterContact->email != $mergeContact->email) {
+                    $masterContact->email = $mergeContact->email 
+                    ? ($masterContact->email 
+                        ? $masterContact->email . ', ' . $mergeContact->email
+                        : $mergeContact->email)
+                    : $masterContact->email;
+                }
+
+                // Update gender if different
+                if ($masterContact->gender != $mergeContact->gender) {
+                    $masterContact->gender = $mergeContact->gender 
+                    ? ($masterContact->gender 
+                        ? $masterContact->gender . ', ' . $mergeContact->gender
+                        : $mergeContact->gender)
+                    : $masterContact->gender;
+                }
+
+                // Update profile_image if different
+                if ($masterContact->profile_image != $mergeContact->profile_image) {
+                    $masterContact->profile_image = $mergeContact->profile_image 
+                    ? ($masterContact->profile_image 
+                        ? $masterContact->profile_image . ', ' . $mergeContact->profile_image 
+                        : $mergeContact->profile_image)
+                    : $masterContact->profile_image;
+                }
+
+                // Update profile_image if different
+                if ($masterContact->profile_image != $mergeContact->profile_image) {
+                    $masterContact->profile_image = $mergeContact->profile_image 
+                    ? ($masterContact->profile_image 
+                        ? $masterContact->profile_image . ', ' . $mergeContact->profile_image 
+                        : $mergeContact->profile_image)
+                    : $masterContact->profile_image;
+                }
+
+                // Update additional_file if different
+                if ($masterContact->additional_file != $mergeContact->additional_file) {
+                    $masterContact->additional_file = $mergeContact->additional_file
+                    ? ($masterContact->additional_file 
+                        ? $masterContact->additional_file . ', ' . $mergeContact->additional_file
+                        : $mergeContact->additional_file)
+                    : $masterContact->additional_file;
+                }
+
+                // Update custom fields
+                // Get all custom fields for both contacts
+                $masterCustomFields = $masterContact->customFields()->get()->keyBy('field_name');
+                $mergeCustomFields = $mergeContact->customFields()->get();
+
+                foreach ($mergeCustomFields as $mergeField) {
+                    $fieldName = $mergeField->field_name;
+                    
+                    // If master already has this field
+                    if ($masterCustomFields->has($fieldName)) {
+                        $masterField = $masterCustomFields[$fieldName];
+                        
+                        // If values are different, append the merge value
+                        if ($masterField->field_value != $mergeField->field_value) {
+                            $masterField->update([
+                                'field_value' => $masterField->field_value ? $masterField->field_value . ', ' . $mergeField->field_value : $mergeField->field_value
+                            ]);
+                        }
+                        // If values are the same, no update needed
+                    } 
+                    // If master doesn't have this field, create it
+                    else {
+                        $masterContact->customFields()->create([
+                            'field_name' => $fieldName,
+                            'field_value' => $mergeField->field_value
+                        ]);
+                    }
+                }
+                
+                $masterContact->save();
+                $mergeContact->save();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Contacts merged successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while merging the contacts.',
+            ], 500);
+        }
+    }
+
 
     public function deleteContact($id)
     {

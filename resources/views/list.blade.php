@@ -198,6 +198,57 @@
         </div>
     </div>
 
+    <!-- Merge Modal -->
+    <div class="modal fade" id="mergeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="mergeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="mergeModalLabel">Merge Contact</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="mergeForm" method="POST" action="" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="_method" value="PUT" id="edit-method-input">
+                    <div id="merge-form-messages" class="alert mx-2 mt-2" style="display: none;"></div>
+                    <div class="modal-body">
+                        <input type="hidden" name="master_contact_id" id="master_contact_id">
+                        <div class="mb-3">
+                            <label for="merge-contact" class="form-label">Select Merge Contact <span class="text-danger">*</span></label>
+                            <select name="merge-contact" id="merge-contact">
+                                @foreach ($contacts as $contact)
+                                    <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gender" class="form-label me-5">Which Contact to Keep?</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="keep" id="both"
+                                    value="both">
+                                <label class="form-check-label" for="both">Both</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="keep" id="master"
+                                    value="master">
+                                <label class="form-check-label" for="master">First/Master</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" id="mergeBtn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status"
+                                aria-hidden="true"></span>
+                            Merge
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
@@ -243,6 +294,48 @@
                 contacts.forEach(contact => {
                     const tr = document.createElement('tr');
                     const profileImage = contact.profile_image ? 'storage/'+contact.profile_image : 'assets/img/person.png';
+
+                    // Declare variables with let to ensure they're in the correct scope
+                    let mergeBtnClass, mergeBtnData, toggle, target, mergeBtnText, disabled;
+
+                    if(contact.is_merged){
+                        console.log(contact.is_merged);
+                        mergeBtnClass = "btn btn-sm btn-danger";
+                        mergeBtnData = '';
+                        toggle = "";
+                        target = "";
+                        mergeBtnText = "Merged";
+                        disabled = "disabled";
+                    }else{
+                        mergeBtnClass = "merge-button btn btn-sm btn-outline-primary";
+                        mergeBtnData = contact.id;
+                        toggle = "modal";
+                        target = "#mergeModal";
+                        mergeBtnText = "Merge";
+                        disabled = "";
+                    }
+
+                    if (contact.merged_into) {
+                        tr.innerHTML = `
+                            <td class="text-muted">${contact.id}</td>
+                            <td>
+                                <img src="{{ asset('${profileImage}') }}" alt="Profile Image" class="img-fluid rounded-circle border" style="width: 50px; height: 50px; object-fit: cover;">
+                            </td>
+                            <td>
+                                <div class="fw-semibold">${contact.name || '-'}</div>
+                            </td>
+                            <td colspan="3" class="text-center">Merged into ${contact.merged_into}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-danger" disabled>Merged</button>
+                                    <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
+                                    <form class="d-inline delete-form" data-id="${contact.id}">
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contact?')">Delete</button>
+                                    </form>
+                                </div>
+                            </td>`;
+                    }else{
                     tr.innerHTML = `
                         <td class="text-muted">${contact.id}</td>
                         <td>
@@ -256,6 +349,7 @@
                         <td class="text-muted small">${contact.created_at ? new Date(contact.created_at).toISOString().split('T')[0] : '-'}</td>
                         <td>
                             <div class="d-flex gap-2">
+                                <button type="button" class="${mergeBtnClass}" data-id="${mergeBtnData}" data-bs-toggle="${toggle}" data-bs-target="${target}" ${disabled}>${mergeBtnText}</button>
                                 <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
                                 <form class="d-inline delete-form" data-id="${contact.id}">
                                     @method('DELETE')
@@ -264,7 +358,10 @@
                             </div>
                         </td>
                     `;
+                    }
+
                     tbody.appendChild(tr);
+
                 });
             }
 
@@ -485,6 +582,53 @@
 
             });
 
+            if (tableBody) {
+                tableBody.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.merge-button');
+                    if (!btn) return;
+                    const contactId = btn.getAttribute('data-id');
+
+                    // Set the master contact ID
+                    document.getElementById('master_contact_id').value = contactId;
+
+                    // Set edit form action to the contact update endpoint
+                    const editForm = document.getElementById('mergeForm');
+                    if (editForm) {
+                        editForm.action = '/merge/' + contactId;
+                    }
+                });
+            }
+            
+            // Merge Contact
+            document.getElementById('mergeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = $(this);
+                const contactId = form.data('id');
+
+                if (confirm('Are you sure you want to merge this contact?')) {
+                    $.ajax({
+                        url: '/merge/' + contactId,
+                        method: 'PUT',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            _method: 'PUT'
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                loadContacts(); // Refresh the contacts list
+                                // Optional: Show success message
+                                alert(response.message);
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error('Error merging contact:', xhr);
+                            alert('Error merging contact');
+                        }
+                    });
+                }
+            });
+
+            
             // Add this inside your DOMContentLoaded event listener
             $(document).on('submit', '.delete-form', function(e) {
                 e.preventDefault();
