@@ -31,6 +31,21 @@ class ContactsController extends Controller
         }
     }
 
+    public function getTrashedList()
+    {
+        try {
+            $contacts = Contact::onlyTrashed()->get();
+
+            // dd($contacts);
+            return view('trashed-list', compact('contacts'));
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching the contacts.',
+            ], 500);
+        }
+    }
     public function getContact($id)
     {
         try {

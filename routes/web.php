@@ -6,6 +6,8 @@ use App\Http\Controllers\ContactsController;
 
 Route::get('/', [ContactsController::class, 'index'])->name('list');
 Route::get('/getList', [ContactsController::class, 'getList'])->name('getList');
+Route::get('/trashed-contacts', [ContactsController::class, 'getTrashedList'])->name('trashed-contacts');
+
 
 Route::get('/get-contact/{id}', [ContactsController::class, 'getContact'])->name('getcontact');
 Route::put('/update-contact/{id}', [ContactsController::class, 'updateContact'])->name('updateContact');

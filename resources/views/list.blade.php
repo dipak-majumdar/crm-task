@@ -6,6 +6,10 @@
             <p class="text-muted mb-0">List of contacts in the system.</p>
         </div>
         <div>
+            <a href="{{ route('trashed-contacts') }}" class="btn btn-danger">
+                <i class="bi bi-trash me-1"></i> Trashed Contacts
+            </a>
+
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                 <i class="bi bi-plus-circle me-1"></i> New Contact
             </button>
