@@ -2,8 +2,8 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-0">Contacts</h1>
-            <p class="text-muted mb-0">List of contacts in the system.</p>
+            <h1 class="h3 mb-0">Trashed Contacts</h1>
+            <p class="text-muted mb-0">List of trashed contacts in the system.</p>
         </div>
         <div>
             <button type="button" class="btn btn-secondary" onclick="window.location.href = '{{ route('list') }}'">
@@ -22,6 +22,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    <th>Is Merged</th>
                     <th style="width:160px">Created</th>
                     <th style="width:140px">Deleted On</th>
                 </tr>
@@ -40,6 +41,7 @@
                         </td>
                         <td>{{ $contact->email }}</td>
                         <td>{{ $contact->phone }}</td>
+                        <td>{{ $contact->merged_into ? 'Merged to '.$contact->merged_into : "NO" }}</td>
                         <td class="text-muted small">
                             {{ $contact->created_at ? $contact->created_at->format('d-m-Y') : '-' }}</td>
                         <td class="text-muted small">

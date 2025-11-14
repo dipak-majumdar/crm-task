@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactsController;
 
 Route::get('/', [ContactsController::class, 'index'])->name('list');
-Route::get('/getList', [ContactsController::class, 'getList'])->name('getList');
+Route::get('/contact-list', [ContactsController::class, 'getList'])->name('contact-list');
 Route::get('/trashed-contacts', [ContactsController::class, 'getTrashedList'])->name('trashed-contacts');
 
 

@@ -138,7 +138,6 @@
                 <form id="editContactForm" method="POST" action="" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="_method" value="PUT" id="edit-method-input">
-                    <div id="edit-form-messages" class="alert mx-2 mt-2" style="display: none;"></div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="edit-name" class="form-label">Name <span class="text-danger">*</span></label>
@@ -253,17 +252,35 @@
         </div>
     </div>
 
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header text-white">
+      {{-- <img src="..." class="rounded me-2" alt="..."> --}}
+      <i class="bi bi-check-circle-fill text-white me-2"></i>
+      <strong class="me-auto text-white"></strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body"></div>
+  </div>
+</div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
+            const liveToast = document.getElementById('liveToast');
+            const toastHeader = liveToast.querySelector('.toast-header');
+            const toastTitle = liveToast.querySelector('.toast-header strong');
+            const toastBody = liveToast.querySelector('.toast-body');
+            const toastBootstrap = bootstrap.Toast.getOrCreateInstance(liveToast);
+
             function loadContacts() {
                 $.ajax({
-                    url: '{{ route('getList') }}',
+                    url: '{{ route('contact-list') }}',
                     method: 'GET',
                     dataType: 'json',
                     success: function(data) {
                         if (data.success) {
-                            console.log(data.message);
                             updateContactsTable(data.contacts);
                         } else {
                             console.error('Failed to load contacts:', data.message);
@@ -335,7 +352,7 @@
                                     <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
                                     <form class="d-inline delete-form" data-id="${contact.id}">
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contact?')">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
                                 </div>
                             </td>`;
@@ -357,7 +374,7 @@
                                 <button type="button" class="edit-button btn btn-sm btn-outline-secondary" data-id="${contact.id}" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
                                 <form class="d-inline delete-form" data-id="${contact.id}">
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contact?')">Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                 </form>
                             </div>
                         </td>
@@ -373,18 +390,16 @@
             loadContacts();
 
             document.getElementById('contactForm').addEventListener('submit', function(e) {
-                // e.preventDefault();
+                e.preventDefault();
 
                 const form = e.target;
                 const formData = new FormData(form);
                 const submitBtn = document.getElementById('submitBtn');
                 const spinner = submitBtn.querySelector('.spinner-border');
-                const messagesDiv = document.getElementById('form-messages');
 
                 // Show loading state
                 submitBtn.disabled = true;
                 spinner.classList.remove('d-none');
-                messagesDiv.style.display = 'none';
 
                 $.ajax({
                     url: form.action,
@@ -393,9 +408,12 @@
                     processData: false,
                     contentType: false,
                     success: function(data) {
-                        messagesDiv.className = 'alert alert-success mx-2 mt-2';
-                        messagesDiv.textContent = data.message || 'Contact saved successfully!';
-                        messagesDiv.style.display = 'block';
+
+                        toastHeader.classList.remove('bg-danger');
+                        toastHeader.classList.add('bg-primary');
+                        toastTitle.textContent = 'Success!';
+                        toastBody.textContent = data.message;
+                        toastBootstrap.show();
 
                         // Reset form and reload contacts after 2 seconds
                         form.reset();
@@ -407,19 +425,18 @@
                     error: function(xhr) {
                         const errorMessage = xhr.responseJSON?.message ||
                             'An error occurred while saving the contact.';
-                        messagesDiv.className = 'alert alert-danger mx-2 mt-2';
-                        messagesDiv.textContent = errorMessage;
-                        messagesDiv.style.display = 'block';
+
+                        toastHeader.classList.remove('bg-primary');
+                        toastHeader.classList.add('bg-danger');
+                        toastTitle.textContent = 'Failed!';
+                        toastBody.textContent = errorMessage;
+                        toastBootstrap.show();
+
                         console.error('Error:', xhr);
                     },
                     complete: function() {
                         submitBtn.disabled = false;
                         spinner.classList.add('d-none');
-
-                        // Scroll to top to show messages
-                        messagesDiv.scrollIntoView({
-                            behavior: 'smooth'
-                        });
                     }
                 });
 
@@ -488,7 +505,6 @@
                         success: function(data) {
                             if (data.success) {
                                 const contact = data.contact;
-                                console.log(data);
                                 // Populate the edit modal fields
                                 $('#editModal #edit-name').val(contact.name);
                                 $('#editModal #edit-email').val(contact.email);
@@ -533,6 +549,12 @@
                             }
                         },
                         error: function(xhr, status, error) {
+                            toastHeader.classList.remove('bg-primary');
+                            toastHeader.classList.add('bg-danger');
+                            toastTitle.textContent = 'Failed!';
+                            toastBody.textContent = xhr.responseJSON?.message;
+                            toastBootstrap.show();
+
                             console.error('Error fetching contact data:', error);
                         }
                     });
@@ -546,12 +568,10 @@
                 const formData = new FormData(form);
                 const submitBtn = document.getElementById('updateBtn');
                 const spinner = submitBtn.querySelector('.spinner-border');
-                const messagesDiv = document.getElementById('edit-form-messages');
 
                 // Show loading state
                 submitBtn.disabled = true;
                 spinner.classList.remove('d-none');
-                messagesDiv.style.display = 'none';
 
                 $.ajax({
                     url: form.action,
@@ -560,27 +580,30 @@
                     processData: false,
                     contentType: false,
                     success: function(data) {
-                        messagesDiv.className = 'alert alert-success mx-2 mt-2';
-                        messagesDiv.textContent = data.message || 'Contact saved successfully!';
-                        messagesDiv.style.display = 'block';
+
+                        toastHeader.classList.remove('bg-danger');
+                        toastHeader.classList.add('bg-primary');
+                        toastTitle.textContent = 'Success';
+                        toastBody.textContent = data.message || 'Contact Updated Successfully!';
+                        toastBootstrap.show();
+
                         loadContacts();
                     },
                     error: function(xhr) {
                         const errorMessage = xhr.responseJSON?.message ||
                             'An error occurred while saving the contact.';
-                        messagesDiv.className = 'alert alert-danger mx-2 mt-2';
-                        messagesDiv.textContent = errorMessage;
-                        messagesDiv.style.display = 'block';
+                            
+                        toastHeader.classList.remove('bg-primary');
+                        toastHeader.classList.add('bg-danger');
+                        toastTitle.textContent = 'Error';
+                        toastBody.textContent = errorMessage;
+                        toastBootstrap.show();
+
                         console.error('Error:', xhr);
                     },
                     complete: function() {
                         submitBtn.disabled = false;
                         spinner.classList.add('d-none');
-
-                        // Scroll to top to show messages
-                        messagesDiv.scrollIntoView({
-                            behavior: 'smooth'
-                        });
                     }
                 });
 
@@ -611,7 +634,7 @@
 
                 if (confirm('Are you sure you want to merge this contact?')) {
                     $.ajax({
-                        url: '/merge/' + contactId,
+                        url: form.attr('action'),
                         method: 'PUT',
                         data: {
                             _token: $('meta[name="csrf-token"]').attr('content'),
@@ -621,12 +644,24 @@
                             if (response.status) {
                                 loadContacts(); // Refresh the contacts list
                                 // Optional: Show success message
-                                alert(response.message);
+                                toastHeader.classList.remove('bg-danger');
+                                toastHeader.classList.add('bg-primary');
+                                toastTitle.textContent = 'Merged!';
+                                toastBody.textContent = response.message;
+                                toastBootstrap.show();
                             }
                         },
                         error: function(xhr) {
+                            const errorMessage = xhr.responseJSON?.message ||
+                            'An error occurred while saving the contact.';
+
+                            toastHeader.classList.remove('bg-primary');
+                            toastHeader.classList.add('bg-danger');
+                            toastTitle.textContent = 'Error';
+                            toastBody.textContent = errorMessage;
+                            toastBootstrap.show();
+
                             console.error('Error merging contact:', xhr);
-                            alert('Error merging contact');
                         }
                     });
                 }
@@ -651,12 +686,20 @@
                             if (response.success) {
                                 loadContacts(); // Refresh the contacts list
                                 // Optional: Show success message
-                                alert('Contact deleted successfully');
+                                toastHeader.classList.remove('bg-primary');
+                                toastHeader.classList.add('bg-danger');
+                                toastTitle.textContent = 'Deleted!';
+                                toastBody.textContent = response.message;
+                                toastBootstrap.show();
                             }
                         },
                         error: function(xhr) {
+                            toastHeader.classList.remove('bg-primary');
+                            toastHeader.classList.add('bg-danger');
+                            toastTitle.textContent = 'Failed!';
+                            toastBody.textContent = xhr.responseJSON?.message;
+                            toastBootstrap.show();
                             console.error('Error deleting contact:', xhr);
-                            alert('Error deleting contact');
                         }
                     });
                 }

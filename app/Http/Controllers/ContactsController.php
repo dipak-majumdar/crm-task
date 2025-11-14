@@ -9,7 +9,9 @@ class ContactsController extends Controller
 {
     public function index()
     {
-        $contacts = Contact::all();
+        $contacts = Contact::where('is_merged', 0)
+            ->whereNull('merged_into')
+            ->get();
         return view('list', compact('contacts'));
     }
 
@@ -23,10 +25,10 @@ class ContactsController extends Controller
                 'message' => 'Contacts fetched successfully.',
                 'contacts' => $contacts,
             ]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching the contacts.',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -39,10 +41,10 @@ class ContactsController extends Controller
             // dd($contacts);
             return view('trashed-list', compact('contacts'));
 
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching the contacts.',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -56,10 +58,10 @@ class ContactsController extends Controller
                 'message' => 'Contacts fetched successfully.',
                 'contact' => $contact,
             ]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching the contact.',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -122,7 +124,7 @@ class ContactsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while saving the contact.',
+                'message' => $e->getMessage(),
             ], 500);
 
         }
@@ -204,14 +206,14 @@ class ContactsController extends Controller
             }
 
             return response()->json([
-                'success' => true,
+                'status' => true,
                 'message' => 'Contact Updated successfully!',
                 'contact' => $contact,
             ]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while fetching the contact.',
+                'status' => false,
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -229,10 +231,7 @@ class ContactsController extends Controller
             $mergeContact = Contact::find($request->input('merge-contact'));
 
             if ($masterContact->id == $mergeContact->id) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You cannot merge a contact with itself.',
-                ], 400);
+                throw new \Exception('You cannot merge a contact with itself.');
             }
 
             if ($request->input('keep') == 'master') {
@@ -336,7 +335,7 @@ class ContactsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'An error occurred while merging the contacts.',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -355,7 +354,7 @@ class ContactsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while deleting the contact.',
+                'message' =>  $e->getMessage(),
             ], 500);
         }
     }
