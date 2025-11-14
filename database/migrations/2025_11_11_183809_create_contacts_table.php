@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->nullable();
-            $table->BigInteger('phone')->nullable();
+            $table->string('phone')->nullable();
             $table->enum('gender', ['Male', 'Female', 'Other'])->nullable();
             $table->string('profile_image')->nullable();
             $table->string('additional_file')->nullable();

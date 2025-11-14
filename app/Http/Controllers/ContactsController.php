@@ -33,7 +33,7 @@ class ContactsController extends Controller
     public function contactToMerge($id)
     {
         try {
-            
+
             $contacts = Contact::where('is_merged', 0)
             ->whereNull('merged_into')
             ->where('id', '!=', $id)
@@ -154,7 +154,7 @@ class ContactsController extends Controller
         try {
             // dd($id);
             $contact = Contact::with('customFields')->where('id', $id)->first();
-            
+
              $validatedData = $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|max:255',
@@ -245,7 +245,7 @@ class ContactsController extends Controller
                 'merge-contact' => 'numeric|required',
                 'keep' => 'string|required|in:both,master',
             ]);
-            
+
             $masterContact = Contact::find($request->input('master_contact_id'));
             $mergeContact = Contact::find($request->input('merge-contact'));
 
@@ -262,8 +262,8 @@ class ContactsController extends Controller
 
                 // Update phone if different
                 if ($masterContact->phone != $mergeContact->phone) {
-                    $masterContact->phone = $mergeContact->phone 
-                    ? ($masterContact->phone 
+                    $masterContact->phone = $mergeContact->phone
+                    ? ($masterContact->phone
                         ? $masterContact->phone . ', ' . $mergeContact->phone
                         : $mergeContact->phone)
                     : $masterContact->phone;
@@ -271,8 +271,8 @@ class ContactsController extends Controller
 
                 // Update email if different
                 if ($masterContact->email != $mergeContact->email) {
-                    $masterContact->email = $mergeContact->email 
-                    ? ($masterContact->email 
+                    $masterContact->email = $mergeContact->email
+                    ? ($masterContact->email
                         ? $masterContact->email . ', ' . $mergeContact->email
                         : $mergeContact->email)
                     : $masterContact->email;
@@ -280,31 +280,22 @@ class ContactsController extends Controller
 
                 // Update gender if different
                 if ($masterContact->gender != $mergeContact->gender) {
-                    $masterContact->gender = $mergeContact->gender 
-                    ? ($masterContact->gender 
+                    $masterContact->gender = $mergeContact->gender
+                    ? ($masterContact->gender
                         ? $masterContact->gender . ', ' . $mergeContact->gender
                         : $mergeContact->gender)
                     : $masterContact->gender;
                 }
 
-                // Update profile_image if different
-                if ($masterContact->profile_image != $mergeContact->profile_image) {
-                    $masterContact->profile_image = $mergeContact->profile_image 
-                    ? ($masterContact->profile_image 
-                        ? $masterContact->profile_image . ', ' . $mergeContact->profile_image 
-                        : $mergeContact->profile_image)
-                    : $masterContact->profile_image;
-                }
-
-                // Update profile_image if different
-                if ($masterContact->profile_image != $mergeContact->profile_image) {
-                    $masterContact->profile_image = $masterContact->profile_image ? $masterContact->profile_image : $mergeContact->profile_image;
+                // Keep master's profile image if it exists; otherwise use merge contact's image
+                if (empty($masterContact->profile_image) && !empty($mergeContact->profile_image)) {
+                    $masterContact->profile_image = $mergeContact->profile_image;
                 }
 
                 // Update additional_file if different
                 if ($masterContact->additional_file != $mergeContact->additional_file) {
                     $masterContact->additional_file = $mergeContact->additional_file
-                    ? ($masterContact->additional_file 
+                    ? ($masterContact->additional_file
                         ? $masterContact->additional_file . ', ' . $mergeContact->additional_file
                         : $mergeContact->additional_file)
                     : $masterContact->additional_file;
@@ -317,11 +308,11 @@ class ContactsController extends Controller
 
                 foreach ($mergeCustomFields as $mergeField) {
                     $fieldName = $mergeField->field_name;
-                    
+
                     // If master already has this field
                     if ($masterCustomFields->has($fieldName)) {
                         $masterField = $masterCustomFields[$fieldName];
-                        
+
                         // If values are different, append the merge value
                         if ($masterField->field_value != $mergeField->field_value) {
                             $masterField->update([
@@ -329,7 +320,7 @@ class ContactsController extends Controller
                             ]);
                         }
                         // If values are the same, no update needed
-                    } 
+                    }
                     // If master doesn't have this field, create it
                     else {
                         $masterContact->customFields()->create([
@@ -338,7 +329,7 @@ class ContactsController extends Controller
                         ]);
                     }
                 }
-                
+
                 $masterContact->save();
                 $mergeContact->save();
             }
