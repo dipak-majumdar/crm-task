@@ -9,10 +9,7 @@ class ContactsController extends Controller
 {
     public function index()
     {
-        $contacts = Contact::where('is_merged', 0)
-            ->whereNull('merged_into')
-            ->get();
-        return view('list', compact('contacts'));
+        return view('list');
     }
 
     public function getList()
@@ -28,6 +25,28 @@ class ContactsController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function contactToMerge($id)
+    {
+        try {
+            
+            $contacts = Contact::where('is_merged', 0)
+            ->whereNull('merged_into')
+            ->where('id', '!=', $id)
+            ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Contacts fetched successfully.',
+                'contacts' => $contacts,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -279,11 +298,7 @@ class ContactsController extends Controller
 
                 // Update profile_image if different
                 if ($masterContact->profile_image != $mergeContact->profile_image) {
-                    $masterContact->profile_image = $mergeContact->profile_image 
-                    ? ($masterContact->profile_image 
-                        ? $masterContact->profile_image . ', ' . $mergeContact->profile_image 
-                        : $mergeContact->profile_image)
-                    : $masterContact->profile_image;
+                    $masterContact->profile_image = $masterContact->profile_image ? $masterContact->profile_image : $mergeContact->profile_image;
                 }
 
                 // Update additional_file if different

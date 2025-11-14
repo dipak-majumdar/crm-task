@@ -219,9 +219,7 @@
                         <div class="mb-3">
                             <label for="merge-contact" class="form-label">Select Merge Contact <span class="text-danger">*</span></label>
                             <select name="merge-contact" id="merge-contact">
-                                @foreach ($contacts as $contact)
-                                    <option value="{{ $contact->id }}">{{ $contact->name }}</option>
-                                @endforeach
+                                <option value="" disabled selected>Select</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -320,7 +318,6 @@
                     let mergeBtnClass, mergeBtnData, toggle, target, mergeBtnText, disabled;
 
                     if(contact.is_merged){
-                        console.log(contact.is_merged);
                         mergeBtnClass = "btn btn-sm btn-danger";
                         mergeBtnData = '';
                         toggle = "";
@@ -623,6 +620,30 @@
                     if (editForm) {
                         editForm.action = '/merge/' + contactId;
                     }
+
+                    $.ajax({
+                    url: '{{ url("contacts-to-merge/", "") }}/' + contactId,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.status) {
+                            
+                            const dropdown = document.getElementById('merge-contact');
+                            data.contacts.forEach(function(contact){
+                                const option = document.createElement('option');
+                                option.value = contact.id;
+                                option.textContent = contact.name;
+                                dropdown.appendChild(option);
+                            })
+                        } else {
+                            console.error('Failed to load contacts:', data.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading contacts:', error);
+                    }
+                });
+
                 });
             }
             
@@ -636,10 +657,7 @@
                     $.ajax({
                         url: form.attr('action'),
                         method: 'PUT',
-                        data: {
-                            _token: $('meta[name="csrf-token"]').attr('content'),
-                            _method: 'PUT'
-                        },
+                        data: form.serialize(),
                         success: function(response) {
                             if (response.status) {
                                 loadContacts(); // Refresh the contacts list
